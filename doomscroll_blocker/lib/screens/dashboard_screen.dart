@@ -129,12 +129,15 @@ class _DashboardScreenState extends State<DashboardScreen>
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(14),
+                      image: const DecorationImage(
+                        image: AssetImage('assets/logo.png'),
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                    child: const Icon(Icons.shield, color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 14),
                   const Column(
