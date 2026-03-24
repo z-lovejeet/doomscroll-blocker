@@ -111,42 +111,39 @@ class DoomscrollAccessibilityService : AccessibilityService() {
         }
     }
 
-    /**
-     * Deeply searches the accessibility node tree for Reels-related indicators.
-     */
     private fun detectReelsInTree(node: AccessibilityNodeInfo): Boolean {
-        // Check content description for the active tab
-        val contentDesc = node.contentDescription?.toString()?.lowercase() ?: ""
-        for (indicator in REELS_INDICATORS) {
-            if (contentDesc.contains(indicator)) {
-                // If the tab is selected, we are on the Reels page
-                if (node.isSelected || isNodePartOfSelectedTab(node)) {
-                    return true
+        var isReelsSelected = false
+
+        fun walk(n: AccessibilityNodeInfo) {
+            if (isReelsSelected) return
+
+            val contentDesc = n.contentDescription?.toString()?.lowercase() ?: ""
+            val text = n.text?.toString()?.lowercase() ?: ""
+            
+            // Check if this node specifically represents the "Reels" button/tab
+            val isReelsNode = contentDesc == "reels" || contentDesc == "reel" || 
+                              text == "reels" || contentDesc.startsWith("reels, tab")
+            
+            if (isReelsNode) {
+                // Confirm it is the ACTIVE (selected) tab
+                if (n.isSelected || isNodePartOfSelectedTab(n)) {
+                    isReelsSelected = true
+                    return
+                }
+            }
+
+            // Recurse children
+            for (i in 0 until n.childCount) {
+                val child = n.getChild(i)
+                if (child != null) {
+                    walk(child)
+                    child.recycle()
                 }
             }
         }
 
-        // Search through the node by looking ONLY for actual active video player IDs
-        // Avoid simply matching "reels" because that matches the unselected bottom navbar icon!
-        val viewId = node.viewIdResourceName?.lowercase() ?: ""
-        if (viewId.contains("clips_viewer_pager") || 
-            viewId.contains("reels_viewer") ||
-            viewId.contains("clips_video_container") || 
-            (viewId.contains("reel") && viewId.contains("viewer"))) {
-            return true
-        }
-
-        // Recurse children
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            if (detectReelsInTree(child)) {
-                child.recycle()
-                return true
-            }
-            child.recycle()
-        }
-
-        return false
+        walk(node)
+        return isReelsSelected
     }
 
     private fun isNodePartOfSelectedTab(node: AccessibilityNodeInfo): Boolean {
