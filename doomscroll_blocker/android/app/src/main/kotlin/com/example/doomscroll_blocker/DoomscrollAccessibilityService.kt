@@ -115,29 +115,24 @@ class DoomscrollAccessibilityService : AccessibilityService() {
      * Deeply searches the accessibility node tree for Reels-related indicators.
      */
     private fun detectReelsInTree(node: AccessibilityNodeInfo): Boolean {
-        // Check content description
+        // Check content description for the active tab
         val contentDesc = node.contentDescription?.toString()?.lowercase() ?: ""
         for (indicator in REELS_INDICATORS) {
             if (contentDesc.contains(indicator)) {
-                // Check if this node is selected (it's the active tab)
+                // If the tab is selected, we are on the Reels page
                 if (node.isSelected || isNodePartOfSelectedTab(node)) {
                     return true
                 }
             }
         }
 
-        // Check text
-        val text = node.text?.toString()?.lowercase() ?: ""
-        for (indicator in REELS_INDICATORS) {
-            if (text.contains(indicator) && node.isSelected) {
-                return true
-            }
-        }
-
-        // Search through the node by looking for specific view IDs related to reels player
+        // Search through the node by looking ONLY for actual active video player IDs
+        // Avoid simply matching "reels" because that matches the unselected bottom navbar icon!
         val viewId = node.viewIdResourceName?.lowercase() ?: ""
-        if (viewId.contains("clips_viewer") || viewId.contains("reels_viewer") ||
-            viewId.contains("clips_tab") || viewId.contains("reel")) {
+        if (viewId.contains("clips_viewer_pager") || 
+            viewId.contains("reels_viewer") ||
+            viewId.contains("clips_video_container") || 
+            (viewId.contains("reel") && viewId.contains("viewer"))) {
             return true
         }
 
